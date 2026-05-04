@@ -80,6 +80,8 @@ A fixed random seed is used to ensure reproducibility:
 
 ### 🔹 Performance Comparison
 
+Model performance was evaluated and compared primarily using classification accuracy, as it provides the most intuitive measure of prediction correctness.
+
 | Model | Validation Accuracy | Test Accuracy |
 | ----- | ------------------- | ------------- |
 | A     | 0.7761485826001955  | 0.79765395894 |

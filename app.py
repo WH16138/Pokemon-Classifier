@@ -126,7 +126,7 @@ uploaded_file = st.file_uploader("이미지 업로드", type=["jpg", "png", "jpe
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
 
-    st.image(image, caption="입력 이미지", use_column_width=True)
+    st.image(image, caption="입력 이미지", use_container_width=True)
 
     ########################################
     # 예측
@@ -148,7 +148,7 @@ if uploaded_file:
         with col1:
             rep_img = get_representative_image(class_name)
             if rep_img:
-                st.image(rep_img, use_column_width=True)
+                st.image(rep_img, use_container_width=True)
             else:
                 st.write("No Image")
 

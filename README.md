@@ -139,6 +139,11 @@ This highlights the importance of transfer learning in data-constrained environm
 
 A Streamlit-based interface is implemented for interactive inference.
 
+### 🎬 Demo Video
+
+Watch the demo here:
+https://youtu.be/RW43a3G1GEM
+
 ### Features
 
 * Model selection

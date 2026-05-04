@@ -33,8 +33,8 @@ Four experimental settings are defined:
 
 ## 🗂️ 4. Dataset
 
-* Total images: XXXX
-* Number of classes: XXXX
+* Total images: about 7,000
+* Number of classes: 150
 
 The dataset follows the `ImageFolder` structure:
 

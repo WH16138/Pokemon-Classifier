@@ -128,15 +128,9 @@ if uploaded_file:
 
     st.image(image, caption="입력 이미지", use_container_width=True)
 
-    ########################################
-    # 예측
-    ########################################
     with st.spinner("🔍 예측 중..."):
         probs, indices = predict_top5(model, image)
 
-    ########################################
-    # 결과 출력 (Top-5)
-    ########################################
     st.subheader("📊 Top-5 예측 결과")
 
     for i in range(5):

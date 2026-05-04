@@ -8,15 +8,16 @@ import torch.optim as optim
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, Subset
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 ########################################
-# 0. SEED (재현성)
+# 0. SEED
 ########################################
 SEED = 42
 random.seed(SEED)
 torch.manual_seed(SEED)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 ########################################
 # 1. CONFIG
@@ -44,10 +45,10 @@ EXPERIMENTS = {
     },
 }
 
-DATA_DIR = "./data"  # class별 폴더만 있으면 됨
+DATA_DIR = "./data"
 NUM_CLASSES = 150
-EPOCHS = 10
-BATCH_SIZE = 32
+EPOCHS = 5          # CPU에서는 줄이는 것을 강력 추천
+BATCH_SIZE = 16     # CPU에서는 너무 크게 하면 오히려 느려짐
 
 SAVE_MODEL_DIR = "./models"
 SAVE_RESULT_DIR = "./results"
@@ -104,7 +105,6 @@ def get_dataloaders():
         transforms.ToTensor(),
     ])
 
-    # transform 없이 index만 가져오기용
     base_dataset = datasets.ImageFolder(DATA_DIR)
 
     indices = list(range(len(base_dataset)))
@@ -132,9 +132,24 @@ def get_dataloaders():
         test_idx
     )
 
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
-    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=BATCH_SIZE,
+        shuffle=True,
+        num_workers=2   # CPU에서는 2~4 추천
+    )
+
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=BATCH_SIZE,
+        num_workers=2
+    )
+
+    test_loader = DataLoader(
+        test_ds,
+        batch_size=BATCH_SIZE,
+        num_workers=2
+    )
 
     return train_loader, val_loader, test_loader
 
@@ -145,8 +160,10 @@ def evaluate(model, loader):
     model.eval()
     correct, total = 0, 0
 
+    loop = tqdm(loader, desc="Evaluating", leave=False)
+
     with torch.no_grad():
-        for x, y in loader:
+        for x, y in loop:
             x, y = x.to(device), y.to(device)
             pred = model(x).argmax(dim=1)
             correct += (pred == y).sum().item()
@@ -177,7 +194,9 @@ def train_one(name, config, train_loader, val_loader, test_loader):
         model.train()
         total_loss = 0
 
-        for x, y in train_loader:
+        loop = tqdm(train_loader, desc=f"{name} Epoch {epoch+1}/{EPOCHS}")
+
+        for x, y in loop:
             x, y = x.to(device), y.to(device)
 
             optimizer.zero_grad()
@@ -187,6 +206,7 @@ def train_one(name, config, train_loader, val_loader, test_loader):
             optimizer.step()
 
             total_loss += loss.item()
+            loop.set_postfix(loss=loss.item())
 
         avg_loss = total_loss / len(train_loader)
         val_acc = evaluate(model, val_loader)
@@ -194,7 +214,7 @@ def train_one(name, config, train_loader, val_loader, test_loader):
         train_losses.append(avg_loss)
         val_accs.append(val_acc)
 
-        print(f"Epoch {epoch+1}: loss={avg_loss:.4f}, val_acc={val_acc:.4f}")
+        print(f"[{name}] Epoch {epoch+1}: loss={avg_loss:.4f}, val_acc={val_acc:.4f}")
 
     test_acc = evaluate(model, test_loader)
 
@@ -236,10 +256,16 @@ def main():
     results = {}
 
     for name, config in EXPERIMENTS.items():
+        model_path = f"{SAVE_MODEL_DIR}/{name}.pth"
+        result_path = f"{SAVE_RESULT_DIR}/{name}.json"
+
+        if os.path.exists(model_path) and os.path.exists(result_path):
+            print(f"[SKIP] {name} already completed")
+            continue
+
         results[name] = train_one(name, config, train_loader, val_loader, test_loader)
 
-    print("\nFINAL RESULTS")
-    print(json.dumps(results, indent=4))
+    print("\nDONE")
 
 
 if __name__ == "__main__":
